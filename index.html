@@ -1048,9 +1048,9 @@ for inv in invoices:
       </div>
       <p class="or reveal">Or email me directly:</p>
       <div class="email reveal">
-        <span class="addr" id="addr">christian_cpb@yahoo.com</span>
+        <span class="addr" id="addr">christiancpb123@gmail.com</span>
         <button class="btn primary" id="copy" type="button">Copy email</button>
-        <a class="btn" href="mailto:christian_cpb@yahoo.com?subject=A%20task%20I%20want%20automated">Email me</a>
+        <a class="btn" href="mailto:christiancpb123@gmail.com?subject=A%20task%20I%20want%20automated">Email me</a>
       </div>
     </div>
   </section>
@@ -1195,7 +1195,7 @@ document.querySelectorAll('.cell').forEach(c => c.addEventListener('pointermove'
 document.getElementById('copy').addEventListener('click', e => {
   const b = e.currentTarget, done = () => { b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy email', 1800); };
   const fallback = () => { const r = document.createRange(); r.selectNodeContents(document.getElementById('addr')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Press Ctrl+C'; };
-  navigator.clipboard ? navigator.clipboard.writeText('christian_cpb@yahoo.com').then(done, fallback) : fallback();
+  navigator.clipboard ? navigator.clipboard.writeText('christiancpb123@gmail.com').then(done, fallback) : fallback();
 });
 
 /* runnable workflows on a node canvas: every value here is made up */
@@ -1568,21 +1568,23 @@ document.getElementById('copy').addEventListener('click', e => {
 (() => {
   const f = document.getElementById('book'); if (!f) return;
   const st = document.getElementById('book-state'), btn = f.querySelector('[type=submit]'), ok = document.getElementById('book-ok');
-  const TO = 'christian_cpb@yahoo.com';
+  const TO = 'christiancpb123@gmail.com';
   f.addEventListener('submit', async e => {
     e.preventDefault();
     const d = new FormData(f); if (d.get('_honey')) return;
     const v = k => String(d.get(k) || '').trim();
     const data = {Name: v('name'), Email: v('email'), Business: v('business') || 'Not given', Services: d.getAll('services').join(', ') || 'Not chosen', Tools: v('tools') || 'Not given', Task: v('task'), Budget: v('budget'), Timeline: v('timeline')};
     btn.disabled = true; st.textContent = 'Sending your request...';
+    const ac = new AbortController(), timer = setTimeout(() => ac.abort(), 12000);
     try {
-      const r = await fetch('https://formsubmit.co/ajax/' + TO, {method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json'},
+      const r = await fetch('https://formsubmit.co/ajax/' + TO, {signal: ac.signal, method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json'},
         body: JSON.stringify({...data, _subject: 'Portfolio booking: ' + data.Name, _template: 'table', _captcha: 'false'})});
-      const j = await r.json().catch(() => ({}));
+      const j = await r.json().catch(() => ({})); clearTimeout(timer);
       if (!r.ok || String(j.success) !== 'true') throw new Error('not sent');
       document.getElementById('book-ok-text').textContent = 'Thanks, ' + data.Name + '. Your request is in my inbox and I will reply to ' + data.Email + ' with what can be automated and a quote.';
       f.hidden = true; ok.hidden = false; ok.focus({preventScroll: true});
     } catch (err) {
+      clearTimeout(timer);
       const body = Object.entries(data).map(([k, val]) => k + ': ' + val).join('\n');
       st.textContent = 'That did not send. ';
       const a = document.createElement('a'); a.textContent = 'Send it as an email instead';

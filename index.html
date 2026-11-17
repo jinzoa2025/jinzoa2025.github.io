@@ -1,4 +1,4 @@
-<title>Christian Baclayo</title>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><title>Christian Baclayo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Christian Baclayo builds automations, chatbots and web apps for business owners: leads, invoices, CRM, emails and spreadsheets, with n8n, Zapier, Make, GoHighLevel and Python.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1038,14 +1038,10 @@ for inv in invoices:
         </div>
         <div class="hp" aria-hidden="true"><label>Leave this empty<input type="text" name="_honey" tabindex="-1" autocomplete="off"></label></div>
         <div class="book-foot">
-          <button class="btn primary" type="submit">Send booking request</button>
-          <p class="state" id="book-state" aria-live="polite">No payment and no commitment. I reply with a quote.</p>
+          <button class="btn primary" type="submit">Write my booking email</button>
+          <p class="state" id="book-state" aria-live="polite">Opens your email app with everything filled in. No payment and no commitment.</p>
         </div>
       </form>
-      <div class="book-ok" id="book-ok" hidden tabindex="-1">
-        <h3>Request sent</h3>
-        <p id="book-ok-text"></p>
-      </div>
       <p class="or reveal">Or email me directly:</p>
       <div class="email reveal">
         <span class="addr" id="addr">christiancpb123@gmail.com</span>
@@ -1564,33 +1560,22 @@ document.getElementById('copy').addEventListener('click', e => {
   })();
 })();
 
-/* booking form: sends the request to my inbox; if that fails, it offers a ready-written email instead */
+/* booking form: opens the visitor's own email app with the request already written */
 (() => {
   const f = document.getElementById('book'); if (!f) return;
-  const st = document.getElementById('book-state'), btn = f.querySelector('[type=submit]'), ok = document.getElementById('book-ok');
+  const st = document.getElementById('book-state');
   const TO = 'christiancpb123@gmail.com';
-  f.addEventListener('submit', async e => {
+  f.addEventListener('submit', e => {
     e.preventDefault();
     const d = new FormData(f); if (d.get('_honey')) return;
     const v = k => String(d.get(k) || '').trim();
-    const data = {Name: v('name'), Email: v('email'), Business: v('business') || 'Not given', Services: d.getAll('services').join(', ') || 'Not chosen', Tools: v('tools') || 'Not given', Task: v('task'), Budget: v('budget'), Timeline: v('timeline')};
-    btn.disabled = true; st.textContent = 'Sending your request...';
-    const ac = new AbortController(), timer = setTimeout(() => ac.abort(), 12000);
-    try {
-      const r = await fetch('https://formsubmit.co/ajax/' + TO, {signal: ac.signal, method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json'},
-        body: JSON.stringify({...data, _subject: 'Portfolio booking: ' + data.Name, _template: 'table', _captcha: 'false'})});
-      const j = await r.json().catch(() => ({})); clearTimeout(timer);
-      if (!r.ok || String(j.success) !== 'true') throw new Error('not sent');
-      document.getElementById('book-ok-text').textContent = 'Thanks, ' + data.Name + '. Your request is in my inbox and I will reply to ' + data.Email + ' with what can be automated and a quote.';
-      f.hidden = true; ok.hidden = false; ok.focus({preventScroll: true});
-    } catch (err) {
-      clearTimeout(timer);
-      const body = Object.entries(data).map(([k, val]) => k + ': ' + val).join('\n');
-      st.textContent = 'That did not send. ';
-      const a = document.createElement('a'); a.textContent = 'Send it as an email instead';
-      a.href = 'mailto:' + TO + '?subject=' + encodeURIComponent('Portfolio booking: ' + data.Name) + '&body=' + encodeURIComponent(body);
-      st.append(a, '. Nothing you typed is lost.'); btn.disabled = false;
-    }
+    const data = {Name: v('name'), Email: v('email'), Business: v('business') || 'Not given', 'What I need': d.getAll('services').join(', ') || 'Not sure yet', 'Tools we use': v('tools') || 'Not given', Budget: v('budget'), Timeline: v('timeline')};
+    const body = 'Hi Christian,\n\n' + v('task') + '\n\n' + Object.entries(data).map(([k, val]) => k + ': ' + val).join('\n');
+    const href = 'mailto:' + TO + '?subject=' + encodeURIComponent('Project booking: ' + data.Name) + '&body=' + encodeURIComponent(body);
+    location.href = href;
+    st.textContent = 'Your email app should open with the request written. Press Send there. ';
+    const a = document.createElement('a'); a.href = href; a.textContent = 'Open it again';
+    st.append(a, '.');
   });
 })();
 </script>
@@ -1787,3 +1772,4 @@ new GLTFLoader().parse(bytes.buffer, '', gltf => {
   else { running = true; requestAnimationFrame(loop); }
 }, err => { stage.innerHTML = '<div class="poster">The 3D figure could not load</div>'; console.error(err); });
 </script>
+</body></html>

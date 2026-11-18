@@ -1038,8 +1038,8 @@ for inv in invoices:
         </div>
         <div class="hp" aria-hidden="true"><label>Leave this empty<input type="text" name="_honey" tabindex="-1" autocomplete="off"></label></div>
         <div class="book-foot">
-          <button class="btn primary" type="submit">Write my booking email</button>
-          <p class="state" id="book-state" aria-live="polite">Opens your email app with everything filled in. No payment and no commitment.</p>
+          <button class="btn primary" type="submit">Send booking request</button>
+          <p class="state" id="book-state" aria-live="polite">Goes straight to my inbox. No payment and no commitment.</p>
         </div>
       </form>
       <p class="or reveal">Or email me directly:</p>
@@ -1560,22 +1560,40 @@ document.getElementById('copy').addEventListener('click', e => {
   })();
 })();
 
-/* booking form: opens the visitor's own email app with the request already written */
+/* booking form: sends straight to the inbox; the visitor's email app is only the fallback */
 (() => {
   const f = document.getElementById('book'); if (!f) return;
   const st = document.getElementById('book-state');
+  const btn = f.querySelector('button[type=submit]');
   const TO = 'christiancpb123@gmail.com';
-  f.addEventListener('submit', e => {
+  const URL = 'https://formsubmit.co/ajax/78facd4a6e0251808ab8adcf77dfc8cc';
+  let busy = false;
+  f.addEventListener('submit', async e => {
     e.preventDefault();
+    if (busy) return;
     const d = new FormData(f); if (d.get('_honey')) return;
     const v = k => String(d.get(k) || '').trim();
-    const data = {Name: v('name'), Email: v('email'), Business: v('business') || 'Not given', 'What I need': d.getAll('services').join(', ') || 'Not sure yet', 'Tools we use': v('tools') || 'Not given', Budget: v('budget'), Timeline: v('timeline')};
-    const body = 'Hi Christian,\n\n' + v('task') + '\n\n' + Object.entries(data).map(([k, val]) => k + ': ' + val).join('\n');
+    const data = {Name: v('name'), Email: v('email'), Business: v('business') || 'Not given', Services: d.getAll('services').join(', ') || 'Not sure yet', Tools: v('tools') || 'Not given', Task: v('task'), Budget: v('budget'), Timeline: v('timeline')};
+    busy = true; btn.disabled = true; st.textContent = 'Sending your request...';
+    const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 12000);
+    let ok = false;
+    try {
+      const r = await fetch(URL, {method: 'POST', signal: ac.signal, headers: {'Content-Type': 'application/json', Accept: 'application/json'},
+        body: JSON.stringify(Object.assign({_subject: 'Project booking: ' + data.Name, _template: 'table', _captcha: 'false', _replyto: data.Email}, data))});
+      const j = await r.json().catch(() => ({}));
+      ok = r.ok && String(j.success) === 'true';
+    } catch (err) { ok = false; }
+    clearTimeout(t); busy = false; btn.disabled = false;
+    if (ok) {
+      f.reset();
+      st.textContent = 'Request sent. I will reply to ' + data.Email + ' with questions or a quote.';
+      return;
+    }
+    const body = 'Hi Christian,\n\n' + data.Task + '\n\n' + Object.entries(data).filter(([k]) => k !== 'Task').map(([k, val]) => k + ': ' + val).join('\n');
     const href = 'mailto:' + TO + '?subject=' + encodeURIComponent('Project booking: ' + data.Name) + '&body=' + encodeURIComponent(body);
-    location.href = href;
-    st.textContent = 'Your email app should open with the request written. Press Send there. ';
-    const a = document.createElement('a'); a.href = href; a.textContent = 'Open it again';
-    st.append(a, '.');
+    st.textContent = 'That did not send from here. Nothing you typed is lost. ';
+    const a2 = document.createElement('a'); a2.href = href; a2.textContent = 'Send it from your email app instead';
+    st.append(a2, '.');
   });
 })();
 </script>
